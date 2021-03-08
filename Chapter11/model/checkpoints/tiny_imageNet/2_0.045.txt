@@ -1,0 +1,1 @@
+epoch [0,1], loss : 6.910165, step_acc : 0.000000epoch [0,1], loss : 6.906435, step_acc : 0.000000

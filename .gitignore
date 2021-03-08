@@ -1,0 +1,4 @@
+/Dataset/cifar10/*
+/Dataset/tiny_imageNet/*
+*.JPEG
+*.zip
