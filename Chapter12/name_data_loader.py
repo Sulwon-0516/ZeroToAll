@@ -78,9 +78,14 @@ def country_label(cnt_arr, cnt2int = None):
 
 def collate_fn(batches):
     max_length = 0
+    batch_length = np.zeros(1)
     for name, label in batches:
+        batch_length = np.append(batch_length,len(name)-1)
         if(len(name) > max_length):
             max_length = len(name[0][0])
+    batch_length = np.delete(batch_length,0,axis=0)
+    batch_length += np.array(range(len(batches))) * max_length
+        
 
     batch_name = np.zeros((max_length,1,OHE_DIM))
     batch_label = np.zeros(1)
@@ -93,13 +98,9 @@ def collate_fn(batches):
         batch_label = np.append(batch_label,[label],axis=0)
     batch_name = torch.from_numpy(np.delete(batch_name,0,axis=1)).float()
     batch_label = torch.from_numpy(np.delete(batch_label,0,axis=0)).long()
+    batch_length = torch.from_numpy(batch_length).int()
 
-
-    return batch_name, batch_label
-
-
-
-
+    return batch_name, batch_label, batch_length 
 
 
 def char_OHE(word):
@@ -128,11 +129,9 @@ def char_OHE(word):
 if __name__ == '__main__':
     A = name_train_data()
 
-    train_loader = DataLoader(dataset = A, batch_size = 16, shuffle = True,collate_fn = collate_fn)
-
-    for i, data in enumerate(train_loader):
-        if i == 1:
-            inputs, labels = data
-            print(inputs)
-            print(inputs.shape)
-            print(labels)
+    B = np.zeros(18)
+    for i in name_train_data().encoded_country:
+        B[int(i)] +=1
+    print(A.cnt2int)
+    print(B)
+    print(A.__len__())
