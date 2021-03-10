@@ -19,6 +19,39 @@ TEST_DATA_PATH = "./Dataset/name_classification/names_test.csv"
 
 # DataLoader    
 # I skipped dividing Validation and Training.
+class spanish_polish_data(Dataset):
+    def __init__(self):
+        data = np.genfromtxt(TRAIN_DATA_PATH, skip_header=0,delimiter='"',dtype = 'str')
+        self.data = data[:,1]
+        self.label = data[:,3]
+        self.dutch_ind = [i for i, cnt in enumerate(self.label) if cnt == "Dutch"]
+        self.dutch_name = self.data[self.dutch_ind]
+
+        self.spanish_ind = [i for i, cnt in enumerate(self.label) if cnt == "Spanish"]
+        self.spanish_name = self.data[self.spanish_ind]
+
+        print("# spanish : %d, # dutch : %d" %(len(self.spanish_ind),len(self.dutch_ind)))
+
+    def __getitem__(self,index):
+        # if odd -> dutch, even -> spanish
+        
+        if index%2 == 0:
+            # spanish
+            span_ind = (index - index%2)//2
+            name = self.spanish_name[span_ind]
+            label = 1
+        else:
+            # dutch
+            dut_ind = index//2
+            name = self.dutch_name[dut_ind]
+            label = 0
+        return char_OHE(name), label
+    
+    def __len__(self):
+        return len(self.spanish_ind)+len(self.dutch_ind)
+        
+
+
 class name_train_data(Dataset):
     def __init__(self):
         data = np.genfromtxt(TRAIN_DATA_PATH, skip_header=0,delimiter='"',dtype = 'str')
@@ -27,8 +60,9 @@ class name_train_data(Dataset):
         self.n_country = len(set(self.label))
 
         self.cnt2int, self.encoded_country = country_label(self.label)
-        
 
+        c_dutch = self.cnt2int['Dutch']
+        
     def __getitem__(self,index):
         x = char_OHE(self.data[index])
         y = self.encoded_country[index]
@@ -82,11 +116,11 @@ def collate_fn(batches):
     for name, label in batches:
         batch_length = np.append(batch_length,len(name)-1)
         if(len(name) > max_length):
-            max_length = len(name[0][0])
+            max_length = len(name)
     batch_length = np.delete(batch_length,0,axis=0)
-    batch_length += np.array(range(len(batches))) * max_length
-        
+    # batch_length += np.array(range(len(batches))) * max_length
 
+    
     batch_name = np.zeros((max_length,1,OHE_DIM))
     batch_label = np.zeros(1)
     for name, label in batches:
@@ -96,6 +130,7 @@ def collate_fn(batches):
             name = np.append(name,pad_token,axis=0)
         batch_name = np.append(batch_name,name,axis=1)
         batch_label = np.append(batch_label,[label],axis=0)
+
     batch_name = torch.from_numpy(np.delete(batch_name,0,axis=1)).float()
     batch_label = torch.from_numpy(np.delete(batch_label,0,axis=0)).long()
     batch_length = torch.from_numpy(batch_length).int()
@@ -127,11 +162,6 @@ def char_OHE(word):
 
 
 if __name__ == '__main__':
-    A = name_train_data()
+    A = spanish_polish_data()
 
-    B = np.zeros(18)
-    for i in name_train_data().encoded_country:
-        B[int(i)] +=1
-    print(A.cnt2int)
-    print(B)
-    print(A.__len__())
+    
